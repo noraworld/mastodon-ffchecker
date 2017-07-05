@@ -15,12 +15,12 @@ client.following(id).each do |f|
   followings.push f.id
 end
 
-followers = []
-client.followers(id).each do |f|
-  followers.push f.id
+not_followed_ids = []
+client.relationships(followings).each do |f|
+  unless f.followed_by?
+    not_followed_ids.push f.id
+  end
 end
-
-not_followed_ids = followings - followers
 
 f = File.open('excluded_users.json')
 s = f.read

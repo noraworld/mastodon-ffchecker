@@ -7,21 +7,20 @@ require 'mastodon'
 require 'dotenv'
 
 Dotenv.load
-target_client = Mastodon::REST::Client.new base_url: ENV['BASE_URL'], bearer_token: ENV['TARGET_CLIENT_BEARER_TOKEN']
-bot_client    = Mastodon::REST::Client.new base_url: ENV['BASE_URL'], bearer_token: ENV['BOT_CLIENT_BEARER_TOKEN']
+client = Mastodon::REST::Client.new base_url: ENV['BASE_URL'], bearer_token: ENV['BEARER_TOKEN']
 id = ENV['TARGET_ID']
 
 followings = []
-target_client.following(id).each do |f|
+client.following(id).each do |f|
   followings.push f.id
 end
 
-not_followed_ids = []
-target_client.relationships(followings).each do |f|
-  unless f.followed_by?
-    not_followed_ids.push f.id
-  end
+followers = []
+client.followers(id).each do |f|
+  followers.push f.id
 end
+
+not_followed_ids = followings - followers
 
 f = File.open('excluded_users.json')
 s = f.read
@@ -32,11 +31,11 @@ if not_followed_ids.empty?
   return
 end
 
-username = target_client.account(id).acct
+username = client.account(id).acct
 not_followed_list = ""
 
 not_followed_ids.each do |nf|
-  nf = target_client.account(nf)
+  nf = client.account(nf)
   not_followed_acct = nf.acct
 
   unless excluded_users.include? not_followed_acct
@@ -60,4 +59,4 @@ end
 
 text = "@" + username + " " + message + "\n\n" + not_followed_list
 
-bot_client.create_status(text, nil, [], 'direct')
+client.create_status(text, nil, [], 'direct')
